@@ -2,19 +2,12 @@ require("dotenv").config();
 
 //variables
 var keys = require("./keys.js");
-
 var Spotify = require('node-spotify-api');
-
 var fs = require("fs");
-
 var axios = require("axios");
-
 var moment = require("moment");
-
+var artist = process.argv.slice(3).join(" ");
 var operator = process.argv[2];
-
-console.log(operator);
-
 //switch operator for catogories. 
 switch (operator) {
     case "movie-this":
@@ -22,7 +15,7 @@ switch (operator) {
         break;
 
     case "concert-this":
-        concert();
+        varconcertVenue();
         break;
 
     case "spotify-this-song":
@@ -37,7 +30,6 @@ switch (operator) {
 
 function movie(movieName) {
     var nodeArg = process.argv;
-
     //Created an empty varible to hold music info.
     var movieName = "";
 
@@ -50,8 +42,10 @@ function movie(movieName) {
             movieName += nodeArg[i];
         }
     }
-    if (!movieName) {
+    if (movieName) {
         movieName = "Mr. Nobody"
+    } else {
+        movieName = movieName;
     }
     console.log(movieName);
 
@@ -64,23 +58,26 @@ function movie(movieName) {
             console.log(response.data.Year);
             var rd = response.data
             console.log(
-                "Title: " + rd.Title,
-                "Year: " + rd.Year,
-                "Rating: " + rd.Rating,
-                "Country: " + rd.Country,
-                "Language: " + rd.Language,
-                "Plot: " + rd.Plot,
-                "Actors: " + rd.Actors,
+                "\nTitle: " + rd.Title,
+                "\nYear: " + rd.Year,
+                "\nRating: " + rd.Rating,
+                "\nCountry: " + rd.Country,
+                "\nLanguage: " + rd.Language,
+                "\nPlot: " + rd.Plot,
+                "\nActors: " + rd.Actors,
             )
         }
     );
 }
 
-function performSpotifySearch() {
+function performSpotifySearch(songName) {
     var nodeArg = process.argv;
 
     //Creating an empty variable for songs.
     var songName = "";
+    var Artist = "";
+    var PreviewUrl = "";
+    var Album = "";
 
     //Adding for loop to loop through song info.
     for (i = 2; i < nodeArg.length; i++) {
@@ -90,7 +87,7 @@ function performSpotifySearch() {
             songName += nodeArg[i];
         }
     }
-    if (!songName) {
+    if (songName) {
         songName = "The Sign by Ace of Base"
     }
     console.log(songName);
@@ -103,10 +100,58 @@ function performSpotifySearch() {
             return console.log('Error occurred: ' + err);
         }
         console.log(
-            "Artist" + Artist[i],
-            "Songs Name" + songName,
-            "Preview" + PreviewUrl,
-            "Album" + Album
+            "\nArtist " + Artist[i],
+            "\nSongs Name " + songName,
+            "\nPreview " + PreviewUrl,
+            "\nAlbum " + Album
         )
     });
 }
+
+function varconcertVenue() {
+
+    //request axios bands API.
+    axios.get("https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp"
+    ).then(
+        function (response) {
+            var jsonData = response.data;
+            //adding a for-loop
+            for (var i = 0; i < jsonData.length; i++) {
+                var venue = jsonData[i].venue;
+                var date = jsonData[i].datetime;
+                var formattedDate = moment(date).format("MM-DD-YYYY");
+                console.log(`
+                    Name:  ${venue.name}
+                    Location: ${venue.city}, ${venue.country}
+                    Date: ${formattedDate}
+                    `);
+            }
+        }
+    );
+}
+
+function fileSystem() {
+    fs.readFile("random.txt", "utf8", function (error, data) {
+        if (error) {
+            return console.log(error);
+        }
+
+        var dataArr = data.split(",");
+        var operator = dataArr[0];
+        var input = dataArr[1];
+
+        switch (operator) {
+            case "spotify-this-song":
+                performSpotifySearch(input);
+                break;
+
+            case "movie-this":
+                movie(input);
+                break;
+
+            case "concert-this":
+                varconcertVenue(input);
+                break;
+        }
+    });
+}   
